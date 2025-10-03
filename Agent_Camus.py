@@ -169,14 +169,23 @@ def repl(nanda_instance):
     print("Starting Absurdist Agent REPL (with NANDA chat)...")
     print("Type your messages and press Enter. Type 'exit' or 'quit' to stop.\n")
     
+    conversation_history = []
+    
     while True:
         user_input = input("You: ")
         if user_input.strip().lower() in {"exit", "quit"}:
             print("Goodbye. The void awaits...")
             break
         
-        # Use NANDA's chat method which maintains conversation history
-        response = nanda_instance.chat(user_input)
+        # Add user message to history
+        conversation_history.append({"role": "user", "content": user_input})
+        
+        # Call NANDA chat with full message history
+        response = nanda_instance.chat(conversation_history)
+        
+        # Add assistant response to history
+        conversation_history.append({"role": "assistant", "content": response})
+        
         print(f"Absurdist Agent: {response}\n")
 
 
