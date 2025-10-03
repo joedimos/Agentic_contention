@@ -6,8 +6,8 @@ from crewai import Agent, Task, Crew
 from crewai import LLM
 
 
-def create_absurdist_chat():
-    """Create a multi-agent absurdist transformation chat system"""
+def create_absurdist_improvement():
+    """Create a multi-agent absurdist transformation system"""
 
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
@@ -79,42 +79,25 @@ def create_absurdist_chat():
         llm=llm
     )
 
-    def absurdist_chat(messages: list, mode: str = "blend") -> str:
+    def absurdist_improvement(message_text: str, mode: str = "blend") -> str:
         """
-        Transform the latest message into absurdist-philosophical text
+        Transform message into absurdist-philosophical text
         
         Args:
-            messages: List of message dicts with 'role' and 'content'
+            message_text: The message string to transform
             mode: Style mode ('camus', 'plath', or 'blend')
         
         Returns:
             Absurdist response string
         """
         try:
-            # Get the latest user message
-            user_messages = [m for m in messages if m.get('role') == 'user']
-            if not user_messages:
-                return "The silence speaks volumes in the theater of the absurd."
-            
-            message_text = user_messages[-1].get('content', '')
-            
-            # Include conversation context if available
-            context = ""
-            if len(messages) > 1:
-                context = "Previous conversation context:\n"
-                for msg in messages[-3:-1]:  # Last 2 messages before current
-                    role = msg.get('role', 'unknown')
-                    content = msg.get('content', '')
-                    context += f"{role}: {content}\n"
-                context += "\n"
-            
             tasks = []
             selected_agents = []
 
             # Core selections
             if mode in ["camus", "blend"]:
                 tasks.append(Task(
-                    description=f"{context}Reframe this message with Camusian absurdism:\n{message_text}",
+                    description=f"Reframe this message with Camusian absurdism:\n{message_text}",
                     expected_output="A philosophical reinterpretation emphasizing futility, absurdity, or revolt.",
                     agent=camus_agent
                 ))
@@ -122,7 +105,7 @@ def create_absurdist_chat():
 
             if mode in ["plath", "blend"]:
                 tasks.append(Task(
-                    description=f"{context}Reframe this message in Plath's dark poetic style:\n{message_text}",
+                    description=f"Reframe this message in Plath's dark poetic style:\n{message_text}",
                     expected_output="A lyrical, melancholic reinterpretation with vivid imagery.",
                     agent=plath_agent
                 ))
@@ -133,7 +116,7 @@ def create_absurdist_chat():
                 extras = random.sample([kafka_agent, dada_agent, ironist_agent, mystic_agent], k=2)
                 for agent in extras:
                     tasks.append(Task(
-                        description=f"{context}Reframe this message in the style of {agent.role}:\n{message_text}",
+                        description=f"Reframe this message in the style of {agent.role}:\n{message_text}",
                         expected_output="A stylistic reinterpretation expanding the absurdist dimension.",
                         agent=agent
                     ))
@@ -158,18 +141,16 @@ def create_absurdist_chat():
             return str(result).strip()
 
         except Exception as e:
-            print(f"Error in absurdist chat: {e}")
+            print(f"Error in absurdist improvement: {e}")
             return f"Like Sisyphus, your words roll endlessly toward the silence of the void."
 
-    return absurdist_chat
+    return absurdist_improvement
 
 
-def repl(chat_function):
+def repl(absurdist_logic):
     """Simple terminal chat loop"""
     print("Starting Absurdist Agent REPL...")
     print("Type your messages and press Enter. Type 'exit' or 'quit' to stop.\n")
-    
-    conversation_history = []
     
     while True:
         user_input = input("You: ")
@@ -177,15 +158,8 @@ def repl(chat_function):
             print("Goodbye. The void awaits...")
             break
         
-        # Add user message to history
-        conversation_history.append({"role": "user", "content": user_input})
-        
-        # Call the chat function with full message history
-        response = chat_function(conversation_history)
-        
-        # Add assistant response to history
-        conversation_history.append({"role": "assistant", "content": response})
-        
+        # Call the improvement function directly
+        response = absurdist_logic(user_input)
         print(f"Absurdist Agent: {response}\n")
 
 
@@ -195,15 +169,17 @@ def main():
         print("Please set your MISTRAL_API_KEY environment variable")
         return
 
-    absurdist_chat_fn = create_absurdist_chat()
-    nanda = NANDA(absurdist_chat_fn)
+    absurdist_logic = create_absurdist_improvement()
+    
+    # Create NANDA instance - this registers the improvement logic with agent_bridge
+    nanda = NANDA(absurdist_logic)
 
     # Run NANDA server in background
     print("Starting NANDA server in background on http://localhost:8000 ...")
     threading.Thread(target=nanda.start_server, daemon=True).start()
 
-    # Run REPL in foreground using the chat function directly
-    repl(absurdist_chat_fn)
+    # Run REPL in foreground
+    repl(absurdist_logic)
 
 
 if __name__ == "__main__":
