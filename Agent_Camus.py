@@ -228,7 +228,7 @@ def main():
     logger.info("Listening on %s:%d (bind host=%s port=%d)", os.getenv("HOST", HOST), PORT, HOST, PORT)
 
     # start_server supports host/port in many NANDA builds; adjust if your nanda_adapter API differs
-    nanda.start_server(host=HOST, port=PORT)
+    nanda.start_server()
 
 
 if __name__ == "__main__":
