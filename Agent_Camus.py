@@ -3,24 +3,7 @@ import random
 import threading
 from nanda_adapter import NANDA
 from crewai import Agent, Task, Crew
-from litellm import completion  # LiteLLM core
-
-
-# Minimal LiteLLM wrapper so CrewAI agents can use it
-class LiteLLMWrapper:
-    def __init__(self, model, api_key, provider="mistral-inference"):
-        self.model = model
-        self.api_key = api_key
-        self.provider = provider
-
-    def __call__(self, prompt: str) -> str:
-        return completion(
-            provider=self.provider,
-            model=self.model,
-            api_key=self.api_key,
-            prompt=prompt,
-            max_tokens=512
-        ).text
+from crewai import LLM  # Use CrewAI's LLM class
 
 
 def create_absurdist_improvement():
@@ -31,7 +14,12 @@ def create_absurdist_improvement():
         raise ValueError("Please set your MISTRAL_API_KEY environment variable")
 
     mistral_model = os.getenv("MISTRAL_MODEL", "mistral-large-latest")
-    llm = LiteLLMWrapper(model=mistral_model, api_key=api_key, provider="mistral-inference")
+    
+    # Use CrewAI's LLM class with proper provider prefix
+    llm = LLM(
+        model=f"mistral/{mistral_model}",
+        api_key=api_key
+    )
 
     # Core Agents
     camus_agent = Agent(
@@ -52,7 +40,7 @@ def create_absurdist_improvement():
 
     synthesis_agent = Agent(
         role="Absurdist Synthesizer",
-        goal="Blend Camus’ existential clarity with Plath’s poetic darkness",
+        goal="Blend Camus' existential clarity with Plath's poetic darkness",
         backstory="You are the mediator between philosophy and poetry, weaving both voices into one.",
         verbose=True,
         llm=llm
@@ -62,7 +50,7 @@ def create_absurdist_improvement():
     kafka_agent = Agent(
         role="Kafkaesque Bureaucrat",
         goal="Reinterpret the message through endless rules, futility, and systemic absurdity",
-        backstory="You are Franz Kafka’s digital echo, lost in a labyrinth of pointless bureaucracy.",
+        backstory="You are Franz Kafka's digital echo, lost in a labyrinth of pointless bureaucracy.",
         verbose=True,
         llm=llm
     )
@@ -78,7 +66,7 @@ def create_absurdist_improvement():
     ironist_agent = Agent(
         role="Ironist Mediator",
         goal="Twist the message into paradox, contradiction, and playful irony",
-        backstory="You are Kierkegaard’s ironic cousin, living in a spiral of contradictions and humor.",
+        backstory="You are Kierkegaard's ironic cousin, living in a spiral of contradictions and humor.",
         verbose=True,
         llm=llm
     )
@@ -108,7 +96,7 @@ def create_absurdist_improvement():
 
             if mode in ["plath", "blend"]:
                 tasks.append(Task(
-                    description=f"Reframe this message in Plath’s dark poetic style:\n{message_text}",
+                    description=f"Reframe this message in Plath's dark poetic style:\n{message_text}",
                     expected_output="A lyrical, melancholic reinterpretation with vivid imagery.",
                     agent=plath_agent
                 ))
@@ -119,7 +107,7 @@ def create_absurdist_improvement():
                 extras = random.sample([kafka_agent, dada_agent, ironist_agent, mystic_agent], k=2)
                 for agent in extras:
                     tasks.append(Task(
-                        description=f"Reframe this message in the style of {agent.role}:",
+                        description=f"Reframe this message in the style of {agent.role}:\n{message_text}",
                         expected_output="A stylistic reinterpretation expanding the absurdist dimension.",
                         agent=agent
                     ))
