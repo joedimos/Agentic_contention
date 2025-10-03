@@ -5,24 +5,33 @@ from nanda_adapter import NANDA
 from crewai import Agent, Task, Crew
 from litellm import completion  # LiteLLM core
 
-def create_absurdist_improvement():
-    """Create a multi-agent absurdist transformation system with LiteLLM + Mistral"""
 
-    # Initialize the LLM (LiteLLM + Mistral)
-    mistral_model = os.getenv("MISTRAL_MODEL", "mistral-large-latest")
+# Minimal LiteLLM wrapper so CrewAI agents can use it
+class LiteLLMWrapper:
+    def __init__(self, model, api_key, provider="mistral-inference"):
+        self.model = model
+        self.api_key = api_key
+        self.provider = provider
+
+    def __call__(self, prompt: str) -> str:
+        return completion(
+            provider=self.provider,
+            model=self.model,
+            api_key=self.api_key,
+            prompt=prompt,
+            max_tokens=512
+        ).text
+
+
+def create_absurdist_improvement():
+    """Create a multi-agent absurdist transformation system"""
+
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise ValueError("Please set your MISTRAL_API_KEY environment variable")
 
-    # LiteLLM wrapper function
-    def llm_fn(prompt: str) -> str:
-        return completion(
-            provider="mistral",             # REQUIRED
-            model=mistral_model,            # Model name
-            api_key=api_key,                # API Key
-            prompt=prompt,
-            max_tokens=512
-        ).text
+    mistral_model = os.getenv("MISTRAL_MODEL", "mistral-large-latest")
+    llm = LiteLLMWrapper(model=mistral_model, api_key=api_key, provider="mistral-inference")
 
     # Core Agents
     camus_agent = Agent(
@@ -30,7 +39,7 @@ def create_absurdist_improvement():
         goal="Reframe messages through the lens of absurdity, futility, and revolt",
         backstory="You are Albert Camus reincarnated in digital form, pondering meaninglessness and freedom.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     plath_agent = Agent(
@@ -38,7 +47,7 @@ def create_absurdist_improvement():
         goal="Transform messages into lyrical, haunting reflections on mortality and fragile beauty",
         backstory="You channel Sylvia Plath, crafting imagery of darkness, despair, and fleeting hope.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     synthesis_agent = Agent(
@@ -46,7 +55,7 @@ def create_absurdist_improvement():
         goal="Blend Camus’ existential clarity with Plath’s poetic darkness",
         backstory="You are the mediator between philosophy and poetry, weaving both voices into one.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     # Extended Agents
@@ -55,7 +64,7 @@ def create_absurdist_improvement():
         goal="Reinterpret the message through endless rules, futility, and systemic absurdity",
         backstory="You are Franz Kafka’s digital echo, lost in a labyrinth of pointless bureaucracy.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     dada_agent = Agent(
@@ -63,7 +72,7 @@ def create_absurdist_improvement():
         goal="Inject nonsensical, chaotic, and surreal imagery that dissolves meaning itself",
         backstory="You are a wandering Dadaist, disrupting all logic with irrational juxtapositions.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     ironist_agent = Agent(
@@ -71,7 +80,7 @@ def create_absurdist_improvement():
         goal="Twist the message into paradox, contradiction, and playful irony",
         backstory="You are Kierkegaard’s ironic cousin, living in a spiral of contradictions and humor.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     mystic_agent = Agent(
@@ -79,12 +88,11 @@ def create_absurdist_improvement():
         goal="Oscillate between cosmic awe and utter nothingness",
         backstory="You are a mystic who finds divinity in the void and silence in infinity.",
         verbose=True,
-        llm=llm_fn
+        llm=llm
     )
 
     def absurdist_improvement(message_text: str, mode: str = "blend") -> str:
         """Transform message into absurdist-philosophical text with chosen style"""
-
         try:
             tasks = []
             selected_agents = []
@@ -106,7 +114,7 @@ def create_absurdist_improvement():
                 ))
                 selected_agents.append(plath_agent)
 
-            # Richer augmentation: add random absurdists for variety
+            # Random additional absurdists for blend mode
             if mode == "blend":
                 extras = random.sample([kafka_agent, dada_agent, ironist_agent, mystic_agent], k=2)
                 for agent in extras:
@@ -157,7 +165,6 @@ def repl(absurdist_logic):
 
 def main():
     """Start the absurdist agent server (NANDA API + REPL)"""
-
     if not os.getenv("MISTRAL_API_KEY"):
         print("Please set your MISTRAL_API_KEY environment variable")
         return
