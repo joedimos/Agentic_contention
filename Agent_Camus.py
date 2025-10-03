@@ -164,9 +164,9 @@ def create_absurdist_chat():
     return absurdist_chat
 
 
-def repl(nanda_instance):
-    """Simple terminal chat loop using NANDA chat"""
-    print("Starting Absurdist Agent REPL (with NANDA chat)...")
+def repl(chat_function):
+    """Simple terminal chat loop"""
+    print("Starting Absurdist Agent REPL...")
     print("Type your messages and press Enter. Type 'exit' or 'quit' to stop.\n")
     
     conversation_history = []
@@ -180,8 +180,8 @@ def repl(nanda_instance):
         # Add user message to history
         conversation_history.append({"role": "user", "content": user_input})
         
-        # Call NANDA chat with full message history
-        response = nanda_instance.chat(conversation_history)
+        # Call the chat function with full message history
+        response = chat_function(conversation_history)
         
         # Add assistant response to history
         conversation_history.append({"role": "assistant", "content": response})
@@ -202,8 +202,8 @@ def main():
     print("Starting NANDA server in background on http://localhost:8000 ...")
     threading.Thread(target=nanda.start_server, daemon=True).start()
 
-    # Run REPL in foreground using NANDA's chat method
-    repl(nanda)
+    # Run REPL in foreground using the chat function directly
+    repl(absurdist_chat_fn)
 
 
 if __name__ == "__main__":
